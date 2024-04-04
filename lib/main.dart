@@ -1,23 +1,33 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
 
+const String request =
+    "https://api.hgbrasil.com/finance/quotations?key=bf08a3b2";
 
-const String request = "https://api.hgbrasil.com/finance/quotations?key=bf08a3b2";
-
-void main() async{
-
+void main() async {
   print(await getData());
 
   runApp(MaterialApp(
-    home: Home(
-
-    )
+      home: Home(),
+      theme: ThemeData(
+        hintColor: Colors.amber,
+        primaryColor: Colors.white,
+        inputDecorationTheme: InputDecorationTheme(
+          enabledBorder:
+            OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+          focusedBorder:
+            OutlineInputBorder(borderSide: BorderSide(color: Colors.amber)),
+          hintStyle: TextStyle(color: Colors.amber),
+        )
+      ),
   ));
 }
 
-Future<Map> getData() async{
+Future<Map> getData() async {
   Uri uri = Uri.parse(request);
   http.Response response = await http.get(uri);
   return jsonDecode(response.body);
@@ -31,15 +41,95 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  double euro = 0;
+  double dolar = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text("\$ Conversor \$"),
-        backgroundColor: Colors.amber,
-        centerTitle: true,
-      ),
-    );
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: Text("\$ Conversor \$",
+            style: TextStyle(color: Colors.black),),
+          backgroundColor: Colors.amber,
+          centerTitle: true,
+        ),
+        body: FutureBuilder<Map>(
+          future: getData(),
+          builder: (context, snapshot) {
+            switch (snapshot.connectionState) {
+              case ConnectionState.none:
+              case ConnectionState.waiting:
+                return Center(
+                    child: Text(
+                  "Carregando Dados...",
+                  style: TextStyle(color: Colors.amber, fontSize: 25.0),
+                  textAlign: TextAlign.center,
+                ));
+              default:
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text(
+                    "Erro ao carregar Dados",
+                    style: TextStyle(color: Colors.amber, fontSize: 25.0),
+                    textAlign: TextAlign.center,
+                  ));
+                } else {
+                  dolar = snapshot.data!["results"]["currencies"]["USD"]["buy"];
+                  euro = snapshot.data!["results"]["currencies"]["EUR"]["buy"];
+
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.all(10.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      // ignore: prefer_const_literals_to_create_immutables
+                      children: <Widget>[
+                        Icon(
+                          Icons.monetization_on,
+                          size: 150.0,
+                          color: Colors.amber,
+                        ),
+                        TextField(
+                          decoration: InputDecoration(
+                              labelText: "Real",
+                              labelStyle: TextStyle(color: Colors.amber),
+                              border: OutlineInputBorder(),
+                              prefixText: "R\$"
+                          ),
+                          style: TextStyle(
+                            color: Colors.amber, fontSize: 25.0,
+                          ),
+                        ),
+                        Divider(),
+                        TextField(
+                          decoration: InputDecoration(
+                              labelText: "Dolar",
+                              labelStyle: TextStyle(color: Colors.amber),
+                              border: OutlineInputBorder(),
+                              prefixText: "US\$"
+                          ),
+                          style: TextStyle(
+                            color: Colors.amber, fontSize: 25.0,
+                          ),
+                        ),
+                        Divider(),
+                        TextField(
+                          decoration: InputDecoration(
+                              labelText: "Euro",
+                              labelStyle: TextStyle(color: Colors.amber),
+                              border: OutlineInputBorder(),
+                              prefixText: "EUR\$"
+                          ),
+                          style: TextStyle(
+                            color: Colors.amber, fontSize: 25.0,
+                          ),
+                        )
+                      ],
+                    ),
+                  );
+                }
+            }
+          },
+        ));
   }
 }
